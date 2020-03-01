@@ -1,1 +1,3 @@
-"# zabbix-alerts-optimize" 
+# Zabbix告警合并
+
+减少告警量，合并一个主机多个告警，合并多个主机同一告警
