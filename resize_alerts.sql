@@ -17,7 +17,7 @@ BEGIN
 		substring_index(subject,'#',1) triggername,
 		substring_index(substring_index(subject,'#',2),'#',-1) hostname,
 		substring_index(substring_index(subject,'#',4),'#',-1) itemvalue,
-		substring_index(subject,'#',-1) eventtime,
+		substring_index(message,'：',-1) eventtime,
 		a.p_eventid,
 	CASE
 			WHEN a.p_eventid IS NULL THEN
@@ -27,7 +27,7 @@ BEGIN
 		alerts a,
 		`events` b 
 	WHERE a.clock > UNIX_TIMESTAMP( date_add( now( ), INTERVAL - 2 minute ) ) 
-	  AND a.eventid not in ( SELECT eventid FROM his_alerts )
+	  AND a.eventid > ( SELECT max(eventid) FROM his_alerts )
 		AND STATUS = 1 
 		AND mediatypeid = 3 
 		AND a.eventid = b.eventid 
