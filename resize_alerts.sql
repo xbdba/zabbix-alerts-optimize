@@ -1,4 +1,3 @@
-drop PROCEDURE if EXISTS resize_alerts;
 CREATE DEFINER=`zabbix`@`%` PROCEDURE `resize_alerts`( )
 BEGIN		
 
@@ -53,7 +52,7 @@ SELECT a.eventid FROM tmp_alerts a WHERE p_eventid IN ( SELECT eventid FROM tmp_
 	select sendto,
 					concat(case  when status='0' then '【恢复OK】: ' else '【故障PROBLEM】: ' end ,triggername,
 					' 主机:',hostname,
-					case when triggername in('Oracle日志报错！') then concat(' 问题详情:',itemvalue) else '' end,
+					case when triggername in('Oracle日志报错！','表空间使用率超过90%') and status = '1' then concat(' 问题详情:',itemvalue) else '' end,
 					' 告警时间:',eventtime) subject
 	from (select sendto,group_concat(triggername order by eventtime) triggername,hostname,min(itemvalue) itemvalue,min(eventtime) eventtime,status from 
 						tmp_alerts 
@@ -80,7 +79,7 @@ select sendto,subject,substr(`subject`,instr(subject,'告警时间:')+5) eventti
 	select sendto,
 					concat(case  when status='0' then '【恢复OK】: ' else '【故障PROBLEM】: ' end ,triggername,
 					' 主机:',hostname,case when cnt='1' then '' else concat(' 等',cnt,'台主机') end,
-					case when triggername in('Oracle日志报错！') then concat(' 问题详情:',itemvalue) else '' end,
+					case when triggername in('Oracle日志报错！','表空间使用率超过90%') and status = '1' then concat(' 问题详情:',itemvalue) else '' end,
 					' 告警时间:',eventtime) subject
 	from (select sendto,triggername,max(hostname) hostname,min(itemvalue) itemvalue,min(eventtime) eventtime,status,count(1) cnt from 
 						tmp_alerts a
@@ -94,4 +93,4 @@ select sendto,subject,substr(`subject`,instr(subject,'告警时间:')+5) eventti
 	
 	commit;
 	
-END;
+END
