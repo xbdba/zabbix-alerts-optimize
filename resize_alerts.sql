@@ -75,7 +75,7 @@ insert into all_alerts(sendto, subject, eventtime)
                         hostname,
                         case
                           when triggername in
-                               ('Oracle日志报错！', '表空间使用率超过90%', '数据平台异常！','中证日志有异常告警！','ogg日志报错') and status = '1' then
+                               ('Oracle日志报错！', '表空间使用率超过90%','ogg日志报错') and status = '1' then
                            concat(' 问题详情:', itemvalue)
                           else
                            ''
@@ -141,7 +141,7 @@ insert into all_alerts
                         end,
                         case
                           when triggername in
-                               ('Oracle日志报错！', '表空间使用率超过90%', '数据平台异常！','鹰眼行情服务日志异常！','ogg日志报错') and status = '1' then
+                               ('Oracle日志报错！', '表空间使用率超过90%','ogg日志报错') and status = '1' then
                            concat(' 问题详情:', itemvalue)
                           else
                            ''
