@@ -9,6 +9,7 @@ truncate table all_alerts;
   
 -- 初始化要处理的告警数据
 INSERT INTO tmp_alerts
+select eventid,clock,sendto,triggername,hostname,itemvalue,eventtime,esc_step,p_eventid,STATUS from (
 SELECT a.eventid,
        a.clock,
        a.sendto,
@@ -16,6 +17,7 @@ SELECT a.eventid,
        substring_index(substring_index(SUBJECT, '#', 2), '#', -1) hostname,
        substring_index(substring_index(SUBJECT, '#', 4), '#', -1) itemvalue,
        substring_index(message, '：', -1) eventtime,
+       a.esc_step,
        a.p_eventid,
        CASE
        
@@ -23,20 +25,28 @@ SELECT a.eventid,
           1
          ELSE
           0
-       END STATUS
-  FROM alerts a, events b
- WHERE a.clock > UNIX_TIMESTAMP(date_add(now(), INTERVAL - 2 MINUTE))
-   AND a.eventid > (SELECT max(eventid) FROM his_alerts)
+       END STATUS,@row_num :=
+IF
+  ( @pre_value = concat_ws('', a.eventid, a.sendto ), @row_num + 1, 1 ) as rownumber,
+  @pre_value := concat_ws( '', a.eventid, a.sendto )
+  FROM alerts a, events b,( SELECT @row_num := 1 ) x,
+  ( SELECT @prev_value := '' ) y 
+ WHERE a.clock > UNIX_TIMESTAMP(date_add(now(), INTERVAL - 4 MINUTE))
+   -- AND a.eventid > (SELECT max(eventid) FROM his_alerts)
+   AND (a.eventid, a.esc_step) not in(SELECT eventid,esc_step FROM his_alerts)
    AND STATUS = 1
    AND mediatypeid = 3
    AND a.eventid = b.eventid
- ORDER BY 1;
+ ORDER BY eventid,
+  sendto) aa
+where rownumber=1
+order by 1;
 
 -- 归档告警数据 
 INSERT INTO his_alerts
   SELECT * FROM tmp_alerts;
 
--- 删除一分钟内已经恢复的告警 
+-- 删除周期内已经恢复的告警 
 DELETE FROM tmp_alerts
  WHERE eventid IN
        (SELECT eventid
@@ -65,7 +75,7 @@ insert into all_alerts(sendto, subject, eventtime)
                         hostname,
                         case
                           when triggername in
-                               ('Oracle日志报错！', '表空间使用率超过90%') and status = '1' then
+                               ('Oracle日志报错！', '表空间使用率超过90%', '数据平台异常！','中证日志有异常告警！','ogg日志报错') and status = '1' then
                            concat(' 问题详情:', itemvalue)
                           else
                            ''
@@ -131,7 +141,7 @@ insert into all_alerts
                         end,
                         case
                           when triggername in
-                               ('Oracle日志报错！', '表空间使用率超过90%') and status = '1' then
+                               ('Oracle日志报错！', '表空间使用率超过90%', '数据平台异常！','鹰眼行情服务日志异常！','ogg日志报错') and status = '1' then
                            concat(' 问题详情:', itemvalue)
                           else
                            ''
